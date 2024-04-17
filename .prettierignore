@@ -1,0 +1,11 @@
+# hardhat folders
+artifacts/
+build/
+cache/
+coverage/
+dist/
+node_modules/
+typechain/
+
+# hardhat files
+coverage.json
