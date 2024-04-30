@@ -107,10 +107,8 @@ contract OpsecStaking is
         stakeData.duration = duration;
         stakeData.timestamp = block.timestamp;
 
-        unchecked {
-            stakeAmounts[msg.sender] += amount;
-            totalStaked += amount;
-        }
+        stakeAmounts[msg.sender] += amount;
+        totalStaked += amount;
 
         emit Staked(stakeId, msg.sender, amount, duration, block.timestamp);
     }
@@ -133,9 +131,7 @@ contract OpsecStaking is
             "The stake is expired"
         );
 
-        unchecked {
-            stakeData.duration += duration;
-        }
+        stakeData.duration += duration;
 
         emit Extended(stakeId, duration);
     }
@@ -154,10 +150,8 @@ contract OpsecStaking is
         );
 
         stakeData.unstaked = true;
-        unchecked {
-            stakeAmounts[msg.sender] -= stakeData.amount;
-            totalStaked -= stakeData.amount;
-        }
+        stakeAmounts[msg.sender] -= stakeData.amount;
+        totalStaked -= stakeData.amount;
 
         opsec.safeTransfer(msg.sender, stakeData.amount);
 
@@ -181,9 +175,7 @@ contract OpsecStaking is
 
             emit Claimed(amounts[i], users[i]);
 
-            unchecked {
-                i += 1;
-            }
+            i += 1;
         }
     }
 
@@ -201,11 +193,9 @@ contract OpsecStaking is
         if (token == address(opsec)) {
             uint256 maxWithdrawAmount;
 
-            unchecked {
-                maxWithdrawAmount =
-                    IERC20(token).balanceOf(address(this)) -
-                    totalStaked;
-            }
+            maxWithdrawAmount =
+                IERC20(token).balanceOf(address(this)) -
+                totalStaked;
 
             require(
                 maxWithdrawAmount >= amount,
