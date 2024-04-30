@@ -28,6 +28,8 @@ contract OpsecStaking is
     // Address of Opsec token
     IERC20 public opsec;
 
+    uint256 private totalStaked;
+
     // Stake Datas
     mapping(bytes32 => StakeData) public stakes;
 
@@ -107,6 +109,7 @@ contract OpsecStaking is
 
         unchecked {
             stakeAmounts[msg.sender] += amount;
+            totalStaked += amount;
         }
 
         emit Staked(stakeId, msg.sender, amount, duration, block.timestamp);
@@ -153,6 +156,7 @@ contract OpsecStaking is
         stakeData.unstaked = true;
         unchecked {
             stakeAmounts[msg.sender] -= stakeData.amount;
+            totalStaked -= stakeData.amount;
         }
 
         opsec.safeTransfer(msg.sender, stakeData.amount);
@@ -194,6 +198,21 @@ contract OpsecStaking is
         address user,
         uint256 amount
     ) external onlyOwner {
+        if (token == address(opsec)) {
+            uint256 maxWithdrawAmount;
+
+            unchecked {
+                maxWithdrawAmount =
+                    IERC20(token).balanceOf(address(this)) -
+                    totalStaked;
+            }
+
+            require(
+                maxWithdrawAmount >= amount,
+                "Insufficient $OPSEC balance to withdraw"
+            );
+        }
+
         IERC20(token).safeTransfer(user, amount);
     }
 }
