@@ -86,6 +86,7 @@ contract OpsecStaking is OwnableUpgradeable, PausableUpgradeable {
         uint256 duration
     ) external whenNotPaused {
         require(amount > 0, "Amount must be greater than 0");
+        require(duration >= 30 days, "Staking duration must be at least 1 month");
 
         StakeData storage stakeData = stakes[stakeId];
         require(
