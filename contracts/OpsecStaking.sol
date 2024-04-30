@@ -6,8 +6,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-contract OpsecStaking is OwnableUpgradeable, PausableUpgradeable {
+contract OpsecStaking is
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable
+{
     using SafeERC20 for IERC20;
     using Address for address payable;
 
@@ -54,7 +59,7 @@ contract OpsecStaking is OwnableUpgradeable, PausableUpgradeable {
      * @dev Initializes the contract setting owner and opsec token.
      */
     function initialize(IERC20 _opsec) external initializer {
-        __Ownable_init(_msgSender());
+        __Ownable_init(msg.sender);
         __Pausable_init();
 
         opsec = _opsec;
@@ -86,7 +91,6 @@ contract OpsecStaking is OwnableUpgradeable, PausableUpgradeable {
         uint256 duration
     ) external whenNotPaused {
         require(amount > 0, "Amount must be greater than 0");
-        require(duration >= 30 days, "Staking duration must be at least 1 month");
 
         StakeData storage stakeData = stakes[stakeId];
         require(
@@ -101,7 +105,9 @@ contract OpsecStaking is OwnableUpgradeable, PausableUpgradeable {
         stakeData.duration = duration;
         stakeData.timestamp = block.timestamp;
 
-        stakeAmounts[msg.sender] += amount;
+        unchecked {
+            stakeAmounts[msg.sender] += amount;
+        }
 
         emit Staked(stakeId, msg.sender, amount, duration, block.timestamp);
     }
@@ -124,7 +130,9 @@ contract OpsecStaking is OwnableUpgradeable, PausableUpgradeable {
             "The stake is expired"
         );
 
-        stakeData.duration += duration;
+        unchecked {
+            stakeData.duration += duration;
+        }
 
         emit Extended(stakeId, duration);
     }
@@ -143,7 +151,9 @@ contract OpsecStaking is OwnableUpgradeable, PausableUpgradeable {
         );
 
         stakeData.unstaked = true;
-        stakeAmounts[msg.sender] -= stakeData.amount;
+        unchecked {
+            stakeAmounts[msg.sender] -= stakeData.amount;
+        }
 
         opsec.safeTransfer(msg.sender, stakeData.amount);
 
@@ -156,16 +166,20 @@ contract OpsecStaking is OwnableUpgradeable, PausableUpgradeable {
     function claim(
         uint256[] calldata amounts,
         address[] calldata users
-    ) external onlyOwner whenNotPaused {
+    ) external onlyOwner whenNotPaused nonReentrant {
         require(
             amounts.length == users.length,
             "Invalid the length of amounts and users"
         );
 
-        for (uint256 i = 0; i < amounts.length; i++) {
+        for (uint256 i = 0; i < amounts.length; ) {
             payable(users[i]).sendValue(amounts[i]);
 
             emit Claimed(amounts[i], users[i]);
+
+            unchecked {
+                i += 1;
+            }
         }
     }
 
