@@ -164,7 +164,7 @@ contract OpsecStaking is
     function claim(
         uint256[] calldata amounts,
         address[] calldata users
-    ) external onlyOwner whenNotPaused nonReentrant {
+    ) external onlyOwner nonReentrant {
         require(
             amounts.length == users.length,
             "Invalid the length of amounts and users"
@@ -191,14 +191,8 @@ contract OpsecStaking is
         uint256 amount
     ) external onlyOwner {
         if (token == address(opsec)) {
-            uint256 maxWithdrawAmount;
-
-            maxWithdrawAmount =
-                IERC20(token).balanceOf(address(this)) -
-                totalStaked;
-
             require(
-                maxWithdrawAmount >= amount,
+                IERC20(token).balanceOf(address(this)) - totalStaked >= amount,
                 "Insufficient $OPSEC balance to withdraw"
             );
         }
